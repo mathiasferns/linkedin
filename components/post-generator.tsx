@@ -95,7 +95,10 @@ export function PostGenerator() {
           </SelectContent>
         </Select>
         <Textarea
-          placeholder="Describe your achievement or experience..."
+          placeholder="eg. I successfully launched a new product line that increased our company's revenue by 30% in just six months. 
+                      The project involved market research, product development, and a targeted marketing campaign. 
+                      Despite initial skepticism from stakeholders, 
+                      our team's dedication and innovative approach proved successful."
           className="min-h-[200px] resize-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -156,7 +159,6 @@ export function PostGenerator() {
             <div className="whitespace-pre-wrap">{generatedPost}</div>
           ) : (
             <div className="text-gray-400 text-center mt-12 flex flex-col items-center gap-2">
-              <AlertCircle className="w-8 h-8" />
               Your generated post will appear here
             </div>
           )}

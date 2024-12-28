@@ -11,7 +11,7 @@ export function Header() {
         </Link>
         <nav className="flex items-center gap-4">
           <Link href="/blog" className="text-gray-600 hover:text-gray-900">
-            Blog
+            Testimonies
           </Link>
           <Link href="/examples" className="text-gray-600 hover:text-gray-900">
             Examples
