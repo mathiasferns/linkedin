@@ -53,9 +53,9 @@ export function PostGenerator() {
 
       setGeneratedPost(data.post)
       toast.success("Post generated successfully!")
-    } catch (error) {
-      console.error("Error generating post:", error)
-      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
+    } catch (err) {
+      console.error("Error generating post:", err)
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred"
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -69,7 +69,8 @@ export function PostGenerator() {
       setCopied(true)
       toast.success("Copied to clipboard!")
       setTimeout(() => setCopied(false), 2000)
-    } catch (error) {
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err)
       toast.error("Failed to copy to clipboard")
     }
   }
@@ -80,7 +81,7 @@ export function PostGenerator() {
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Your Content</h2>
           <p className="text-sm text-gray-500">
-            Share your achievement, experience, or story and we'll transform it into an engaging LinkedIn post
+            Share your achievement, experience, or story and we&apos;ll transform it into an engaging LinkedIn post
           </p>
         </div>
         <Select value={postType} onValueChange={setPostType}>
@@ -95,10 +96,9 @@ export function PostGenerator() {
           </SelectContent>
         </Select>
         <Textarea
-          placeholder="eg. I successfully launched a new product line that increased our company's revenue by 30% in just six months. 
-                      The project involved market research, product development, and a targeted marketing campaign. 
-                      Despite initial skepticism from stakeholders, 
-                      our team's dedication and innovative approach proved successful."
+          placeholder="eg. I successfully launched a new product line that increased our revenue by 30% in just six months. 
+                      The project involved market research, product development, and a targeted marketing campaign.
+                      our dedication and innovative approach proved successful."
           className="min-h-[200px] resize-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -167,4 +167,3 @@ export function PostGenerator() {
     </div>
   )
 }
-
