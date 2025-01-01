@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server"
-import OpenAI from "openai"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
-const openai = new OpenAI({
-  apiKey: process.env.GROK_API_KEY,
-  baseURL: "https://api.x.ai/v1",
-})
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "")
 
 export async function POST(req: Request) {
   try {
-    if (!process.env.GROK_API_KEY) {
-      throw new Error("GROK_API_KEY is not set in environment variables")
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not set in environment variables")
     }
 
     const { content, type } = await req.json()
@@ -27,32 +24,24 @@ export async function POST(req: Request) {
 
     const prompt = prompts[type as keyof typeof prompts] || prompts.achievement
 
-    const completion = await openai.chat.completions.create({
-      model: "grok-beta",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert LinkedIn post writer. Your posts are:
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+
+    const result = await model.generateContent(`
+      You are an expert LinkedIn post writer. Your posts are:
           1. **Engaging and hook readers in the first line** with a provocative question or a bold statement related to the trend or topic.
           2. **Well-structured with short paragraphs** to ensure readability, especially on mobile devices.
           3. **Include relevant emojis** to add visual interest and convey emotions or key points effectively.
           4. **End with a call to action** that encourages engagement.
           5. **Use appropriate hashtags** and connect with the relevant audience.
-          6. **Between 200-300 words** for optimal engagement, ensuring the message is concise yet informative.`
-        },
-        {
-          role: "user",
-          content: prompt + content
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 500
-    })
+          6. **Between 100-300 words** for optimal engagement, ensuring the message is concise yet informative.
 
-    const generatedPost = completion.choices[0].message.content
+      ${prompt}${content}
+    `)
+
+    const generatedPost = result.response.text()
 
     if (!generatedPost) {
-      throw new Error("No content generated from Grok API")
+      throw new Error("No content generated from Gemini API")
     }
 
     return NextResponse.json({ post: generatedPost })
