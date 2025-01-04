@@ -15,14 +15,3 @@ original prompt
             5. Use appropriate hashtags
             6. Between 200-300 words for optimal engagement`
 
-# gemini api key
-.gemini_api_key
-AIzaSyAiTwAQ1SoeQgKZEphxvSaKpssT13drQKs
-curl "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=GEMINI_API_KEY" \
--H 'Content-Type: application/json' \
--X POST \
--d '{
-  "contents": [{
-    "parts":[{"text": "Explain how AI works"}]
-    }]
-   }'
