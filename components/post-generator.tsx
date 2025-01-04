@@ -91,13 +91,13 @@ export function PostGenerator() {
           <SelectContent>
             <SelectItem value="achievement">🏆 Achievement</SelectItem>
             <SelectItem value="experience">💡 Experience</SelectItem>
-            <SelectItem value="advice">🎯 Professional Advice</SelectItem>
+            <SelectItem value="professional">🎯 Professional</SelectItem>
             <SelectItem value="story">📖 Story</SelectItem>
+            <SelectItem value="fun">😄 Fun </SelectItem>
           </SelectContent>
         </Select>
         <Textarea
-          placeholder="eg. I successfully launched a new product line that increased our revenue by 30% in just six months. 
-                      The project involved market research, product development, and a targeted marketing campaign.
+          placeholder="eg. I successfully launched a new product line that increased our revenue by 30% in just six months.
                       our dedication and innovative approach proved successful."
           className="min-h-[200px] resize-none"
           value={input}
