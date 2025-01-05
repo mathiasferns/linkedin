@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,6 +13,10 @@ import {
 } from "@/components/ui/select"
 import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from "sonner"
+import { auth } from '@/lib/firebase'
+import { User } from 'firebase/auth'
+import { SignIn } from './sign-in'
+import { ImageUpload } from './image-upload'
 
 export function PostGenerator() {
   const [input, setInput] = useState("")
@@ -21,24 +25,40 @@ export function PostGenerator() {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [showSignIn, setShowSignIn] = useState(false)
+  const [image, setImage] = useState<File | null>(null)
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setUser(user)
+    })
+    return () => unsubscribe()
+  }, [])
 
   const generatePost = async () => {
     if (!input) return
+
+    if (!user) {
+      setShowSignIn(true)
+      return
+    }
 
     setLoading(true)
     setGeneratedPost("")
     setError(null)
     
     try {
+      const formData = new FormData()
+      formData.append('content', input)
+      formData.append('type', postType)
+      if (image) {
+        formData.append('image', image)
+      }
+
       const response = await fetch("/api/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: input,
-          type: postType,
-        }),
+        body: formData,
       })
 
       const data = await response.json()
@@ -53,9 +73,9 @@ export function PostGenerator() {
 
       setGeneratedPost(data.post)
       toast.success("Post generated successfully!")
-    } catch (err) {
-      console.error("Error generating post:", err)
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred"
+    } catch (error) {
+      console.error("Error generating post:", error)
+      const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -69,19 +89,27 @@ export function PostGenerator() {
       setCopied(true)
       toast.success("Copied to clipboard!")
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error("Failed to copy to clipboard:", err)
+    } catch (error) {
       toast.error("Failed to copy to clipboard")
     }
   }
 
+  const handleSignIn = () => {
+    setShowSignIn(false)
+    generatePost()
+  }
+
+  if (showSignIn) {
+    return <SignIn onSignIn={handleSignIn} />
+  }
+
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-      <Card className="p-6 space-y-4">
+      <Card className="p-6 space-y-4 shadow-md">
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Your Content</h2>
           <p className="text-sm text-gray-500">
-            Share your achievement, experience, or story and we&apos;ll transform it into an engaging LinkedIn post
+            Share your achievement, experience, or story and we'll transform it into an engaging LinkedIn post
           </p>
         </div>
         <Select value={postType} onValueChange={setPostType}>
@@ -91,18 +119,18 @@ export function PostGenerator() {
           <SelectContent>
             <SelectItem value="achievement">🏆 Achievement</SelectItem>
             <SelectItem value="experience">💡 Experience</SelectItem>
-            <SelectItem value="professional">🎯 Professional</SelectItem>
+            <SelectItem value="professional">🎯 Professional Advice</SelectItem>
             <SelectItem value="story">📖 Story</SelectItem>
-            <SelectItem value="fun">😄 Fun </SelectItem>
+            <SelectItem value="fun">😄 Fun Fact</SelectItem>
           </SelectContent>
         </Select>
         <Textarea
-          placeholder="eg. I successfully launched a new product line that increased our revenue by 30% in just six months.
-                      our dedication and innovative approach proved successful."
+          placeholder="Describe your achievement or experience..."
           className="min-h-[200px] resize-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
+        <ImageUpload onImageUpload={setImage} />
         <Button 
           onClick={generatePost} 
           className="w-full"
@@ -120,7 +148,7 @@ export function PostGenerator() {
         </Button>
       </Card>
 
-      <Card className="p-6 space-y-4">
+      <Card className="p-6 space-y-4 shadow-md">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold">Generated Post</h2>
@@ -167,3 +195,4 @@ export function PostGenerator() {
     </div>
   )
 }
+
