@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,10 +14,8 @@ import {
 } from "@/components/ui/select"
 import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from "sonner"
-import { auth } from '@/lib/firebase'
-import { User } from 'firebase/auth'
-import { SignIn } from './sign-in'
-import { ImageUpload } from './image-upload'
+import { useAuth } from "@/app/context/auth-context"
+import { ImageUpload } from "@/components/image-upload"
 
 export function PostGenerator() {
   const [input, setInput] = useState("")
@@ -25,22 +24,19 @@ export function PostGenerator() {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [user, setUser] = useState<User | null>(null)
-  const [showSignIn, setShowSignIn] = useState(false)
   const [image, setImage] = useState<File | null>(null)
+  const { user } = useAuth()
+  const router = useRouter()
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user)
-    })
-    return () => unsubscribe()
-  }, [])
+  const handleImageUpload = (file: File | null) => {
+    setImage(file)
+  }
 
-  const generatePost = async () => {
+  const generatePost = useCallback(async () => {
     if (!input) return
-
+    
     if (!user) {
-      setShowSignIn(true)
+      router.push('/auth')
       return
     }
 
@@ -68,7 +64,7 @@ export function PostGenerator() {
       }
       
       if (!data.post) {
-        throw new Error("No post content received from the server")
+        throw new Error("No content generated from Gemini API")
       }
 
       setGeneratedPost(data.post)
@@ -81,9 +77,9 @@ export function PostGenerator() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [input, postType, image, user, router])
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(generatedPost)
       setCopied(true)
@@ -92,16 +88,7 @@ export function PostGenerator() {
     } catch (error) {
       toast.error("Failed to copy to clipboard")
     }
-  }
-
-  const handleSignIn = () => {
-    setShowSignIn(false)
-    generatePost()
-  }
-
-  if (showSignIn) {
-    return <SignIn onSignIn={handleSignIn} />
-  }
+  }, [generatedPost])
 
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -121,16 +108,22 @@ export function PostGenerator() {
             <SelectItem value="experience">💡 Experience</SelectItem>
             <SelectItem value="professional">🎯 Professional Advice</SelectItem>
             <SelectItem value="story">📖 Story</SelectItem>
-            <SelectItem value="fun">😄 Fun Fact</SelectItem>
+            <SelectItem value="fun">😄 Fun </SelectItem>
           </SelectContent>
         </Select>
         <Textarea
-          placeholder="Describe your achievement or experience..."
+          placeholder="eg. I successfully launched a new product line that increased our revenue by 30% in just six months.
+                      our dedication and innovative approach proved successful."
           className="min-h-[200px] resize-none"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <ImageUpload onImageUpload={setImage} />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Upload an image (optional)
+          </label>
+          <ImageUpload onImageUpload={handleImageUpload} />
+        </div>
         <Button 
           onClick={generatePost} 
           className="w-full"
@@ -181,7 +174,7 @@ export function PostGenerator() {
             <div className="text-red-500 text-center mt-12 flex flex-col items-center gap-2">
               <AlertCircle className="w-8 h-8" />
               <p>{error}</p>
-              <p className="text-sm text-gray-500">Please try again or contact support if the issue persists.</p>
+              <p className="text-sm text-gray-500">Please try again or contact me if the issue persists.</p>
             </div>
           ) : generatedPost ? (
             <div className="whitespace-pre-wrap">{generatedPost}</div>

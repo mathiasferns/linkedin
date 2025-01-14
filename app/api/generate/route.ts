@@ -3,11 +3,25 @@ import { GoogleGenerativeAI, Part } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
+const apikeys = [
+  process.env.GEMINI_API_KEY_1 || "",
+  process.env.GEMINI_API_KEY_2 || "",
+];
+
+let currentKeyIndex = 0;
+
 export async function POST(req: Request) {
   try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not set in environment variables");
-    }
+    if (!apikeys[0] || !apikeys[1]) {
+      throw new Error("Both KEY_1 and KEY_2 must be set in environment variables");
+  }
+
+  const apiKeyToUse = apikeys[currentKeyIndex];
+    const genAI = new GoogleGenerativeAI(apiKeyToUse);
+
+    // Alternate the key index for the next request
+    currentKeyIndex = (currentKeyIndex + 1) % apikeys.length;
+
 
     const formData = await req.formData();
     const content = formData.get("content") as string | null;

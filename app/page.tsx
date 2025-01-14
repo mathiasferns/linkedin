@@ -27,25 +27,49 @@ export default function Page() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-50">
       <Toaster position="top-center" />
       <Header />
-      <main className="container mx-auto px-4 py-12 bg-white">
-        <div className="text-center max-w-3xl mx-auto space-y-6 mb-12 p-8 rounded-xl backdrop-blur-md bg-white/30 shadow-lg border border-white/20">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-6xl text-black">
-            LinkedIn Post Generator
-          </h1>
-          <p className="text-xl text-gray-600">
-            Transform your achievements into engaging LinkedIn posts that go viral. Powered by AI to create content that resonates with your network.
-          </p>
-          {user && (
-            <div className="flex justify-center items-center gap-4">
-              <p className="text-sm text-gray-600">Signed in as {user.email}</p>
-              <Button onClick={handleSignOut} variant="outline" size="sm">Sign Out</Button>
+      <main className="flex-1 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-12">
+          <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-16">
+            <div className="space-y-6 rounded-2xl backdrop-blur-md bg-white/30 shadow-lg border border-white/20 p-6 sm:p-8 lg:p-10">
+              <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight text-black">
+                LinkedIn Post Generator
+              </h1>
+              <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+                Transform your achievements into engaging LinkedIn posts that go viral every time. 
+                Powered by AI to create content that resonates with your network.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <span className="text-yellow-400">★★★★★</span>
+                  From many happy users starting with you
+                </div>
+                {user && (
+                  <div className="flex items-center gap-3">
+                    <div className="h-4 w-px bg-gray-300 hidden sm:block" />
+                    <p className="text-sm text-gray-600">
+                      {user.email}
+                    </p>
+                    <Button 
+                      onClick={handleSignOut} 
+                      variant="outline" 
+                      size="sm"
+                      className="whitespace-nowrap"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          </div>
+          
+          <div className="w-full max-w-6xl mx-auto">
+            <PostGenerator />
+          </div>
         </div>
-        <PostGenerator />
       </main>
     </div>
   )
