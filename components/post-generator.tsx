@@ -87,6 +87,7 @@ export function PostGenerator() {
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
       toast.error("Failed to copy to clipboard")
+      console.log("Error copying to clipboard:", error)
     }
   }, [generatedPost])
 
@@ -96,7 +97,7 @@ export function PostGenerator() {
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Your Content</h2>
           <p className="text-sm text-gray-500">
-            Share your achievement, experience, or story and we'll transform it into an engaging LinkedIn post
+            Share your achievement, experience, or story and we&apos;ll transform it into an engaging LinkedIn post
           </p>
         </div>
         <Select value={postType} onValueChange={setPostType}>

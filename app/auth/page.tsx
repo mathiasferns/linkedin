@@ -25,7 +25,7 @@ export default function AuthPage() {
       }
       router.push('/')
       toast.success(isSignUp ? 'Account created successfully!' : 'Signed in successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Authentication failed. Please try again.')
     }
   }
@@ -35,7 +35,7 @@ export default function AuthPage() {
       await signInWithGoogle()
       router.push('/')
       toast.success('Signed in successfully!')
-    } catch (error) {
+    } catch {
       toast.error('Google sign-in failed. Please try again.')
     }
   }
