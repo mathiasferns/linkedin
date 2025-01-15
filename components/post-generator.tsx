@@ -27,20 +27,23 @@ export function PostGenerator() {
   const [image, setImage] = useState<File | null>(null)
   const { user } = useAuth()
   const router = useRouter()
+  const [shouldGeneratePost, setShouldGeneratePost] = useState(false)
 
   useEffect(() => {
     const savedInput = localStorage.getItem('postGeneratorInput')
     if (savedInput) {
       setInput(savedInput)
       localStorage.removeItem('postGeneratorInput')
+      setShouldGeneratePost(true)
     }
   }, [])
 
   useEffect(() => {
-    if (user && input) {
+    if (shouldGeneratePost && user) {
       generatePost()
+      setShouldGeneratePost(false)
     }
-  }, [user, input])
+  }, [shouldGeneratePost, user])
 
   const handleImageUpload = (file: File | null) => {
     setImage(file)
@@ -204,4 +207,3 @@ export function PostGenerator() {
     </div>
   )
 }
-
