@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select"
 import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from "sonner"
-import { useAuth } from "@/app/context/auth-context"
+import { useAuth } from "@/context/auth-context"
 import { ImageUpload } from "@/components/image-upload"
 
 export function PostGenerator() {
@@ -28,14 +28,29 @@ export function PostGenerator() {
   const { user } = useAuth()
   const router = useRouter()
 
+  useEffect(() => {
+    const savedInput = localStorage.getItem('postGeneratorInput')
+    if (savedInput) {
+      setInput(savedInput)
+      localStorage.removeItem('postGeneratorInput')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (user && input) {
+      generatePost()
+    }
+  }, [user, input])
+
   const handleImageUpload = (file: File | null) => {
     setImage(file)
   }
 
   const generatePost = useCallback(async () => {
     if (!input) return
-    
+
     if (!user) {
+      localStorage.setItem('postGeneratorInput', input)
       router.push('/auth')
       return
     }
@@ -43,7 +58,7 @@ export function PostGenerator() {
     setLoading(true)
     setGeneratedPost("")
     setError(null)
-    
+
     try {
       const formData = new FormData()
       formData.append('content', input)
@@ -62,7 +77,7 @@ export function PostGenerator() {
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`)
       }
-      
+
       if (!data.post) {
         throw new Error("No content generated from Gemini API")
       }
@@ -125,8 +140,8 @@ export function PostGenerator() {
           </label>
           <ImageUpload onImageUpload={handleImageUpload} />
         </div>
-        <Button 
-          onClick={generatePost} 
+        <Button
+          onClick={generatePost}
           className="w-full"
           disabled={loading || !input}
           size="lg"

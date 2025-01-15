@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/app/context/auth-context"
+import { useAuth } from "@/context/auth-context"
 import { useRouter } from "next/navigation"
 
 export function Header() {

@@ -2,7 +2,8 @@
 
 import React, { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Image, X } from 'lucide-react'
+import { Image as LucideImage, X } from 'lucide-react'
+import Image from 'next/image'
 
 interface ImageUploadProps {
   onImageUpload: (file: File | null) => void
@@ -46,7 +47,14 @@ export function ImageUpload({ onImageUpload }: ImageUploadProps) {
       />
       {previewUrl ? (
         <div className="relative">
-          <img src={previewUrl} alt="Preview" className="max-w-full h-auto rounded-md" />
+          {/* Use next/image for optimized image rendering */}
+          <Image
+            src={previewUrl}
+            alt="Uploaded preview"
+            width={500}
+            height={500}
+            className="max-w-full h-auto rounded-md"
+          />
           <Button
             variant="destructive"
             size="icon"
@@ -62,11 +70,10 @@ export function ImageUpload({ onImageUpload }: ImageUploadProps) {
           onClick={() => fileInputRef.current?.click()}
           className="w-full"
         >
-          <Image className="mr-2 h-4 w-4" />
+          <LucideImage className="mr-2 h-4 w-4" />
           Upload Image
         </Button>
       )}
     </div>
   )
 }
-
