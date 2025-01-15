@@ -29,26 +29,6 @@ export function PostGenerator() {
   const router = useRouter()
   const [shouldGeneratePost, setShouldGeneratePost] = useState(false)
 
-  useEffect(() => {
-    const savedInput = localStorage.getItem('postGeneratorInput')
-    if (savedInput) {
-      setInput(savedInput)
-      localStorage.removeItem('postGeneratorInput')
-      setShouldGeneratePost(true)
-    }
-  }, [])
-
-  useEffect(() => {
-    if (shouldGeneratePost && user) {
-      generatePost()
-      setShouldGeneratePost(false)
-    }
-  }, [shouldGeneratePost, user])
-
-  const handleImageUpload = (file: File | null) => {
-    setImage(file)
-  }
-
   const generatePost = useCallback(async () => {
     if (!input) return
 
@@ -96,6 +76,26 @@ export function PostGenerator() {
       setLoading(false)
     }
   }, [input, postType, image, user, router])
+
+  useEffect(() => {
+    const savedInput = localStorage.getItem('postGeneratorInput')
+    if (savedInput) {
+      setInput(savedInput)
+      localStorage.removeItem('postGeneratorInput')
+      setShouldGeneratePost(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (shouldGeneratePost && user) {
+      generatePost()
+      setShouldGeneratePost(false)
+    }
+  }, [shouldGeneratePost, user, generatePost])
+
+  const handleImageUpload = useCallback((file: File | null) => {
+    setImage(file)
+  }, [])
 
   const copyToClipboard = useCallback(async () => {
     try {
