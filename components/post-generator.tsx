@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select"
 import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from "sonner"
+import { ImageUpload } from "@/components/ImageUpload"
 
 export function PostGenerator() {
   const [input, setInput] = useState("")
@@ -21,6 +22,7 @@ export function PostGenerator() {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
 
   const generatePost = async () => {
     if (!input) return
@@ -30,15 +32,16 @@ export function PostGenerator() {
     setError(null)
     
     try {
+      const formData = new FormData()
+      formData.append("content", input)
+      formData.append("type", postType)
+      if (selectedImage) {
+        formData.append("image", selectedImage)
+      }
+
       const response = await fetch("/api/generate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: input,
-          type: postType,
-        }),
+        body: formData,
       })
 
       const data = await response.json()
@@ -103,6 +106,7 @@ export function PostGenerator() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
+        <ImageUpload onImageUpload={setSelectedImage} />
         <Button 
           onClick={generatePost} 
           className="w-full"
