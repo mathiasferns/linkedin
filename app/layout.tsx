@@ -27,8 +27,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <Toaster position="top-center" />
         <AuthProvider>
-          <Toaster position="top-center" />
           {children}
         </AuthProvider>
       </body>

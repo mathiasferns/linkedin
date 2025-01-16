@@ -25,18 +25,23 @@ export function PostGenerator() {
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [image, setImage] = useState<File | null>(null)
+  const [shouldGenerate, setShouldGenerate] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
-  const [shouldGeneratePost, setShouldGeneratePost] = useState(false)
 
-  const generatePost = useCallback(async () => {
-    if (!input) return
-
+  // Handle authentication check
+  const handleAuthentication = useCallback(() => {
     if (!user) {
       localStorage.setItem('postGeneratorInput', input)
       router.push('/auth')
-      return
+      return false
     }
+    return true
+  }, [user, router, input])
+
+  // Main post generation logic
+  const generatePost = useCallback(async () => {
+    if (!input || !handleAuthentication()) return
 
     setLoading(true)
     setGeneratedPost("")
@@ -75,23 +80,27 @@ export function PostGenerator() {
     } finally {
       setLoading(false)
     }
-  }, [input, postType, image, user, router])
+  }, [input, postType, image, handleAuthentication])
 
+  // Effect to load saved input
   useEffect(() => {
     const savedInput = localStorage.getItem('postGeneratorInput')
     if (savedInput) {
       setInput(savedInput)
       localStorage.removeItem('postGeneratorInput')
-      setShouldGeneratePost(true)
+      if (user) {
+        setShouldGenerate(true)
+      }
     }
-  }, [])
+  }, [user])
 
+  // Effect to handle auto-generation after authentication
   useEffect(() => {
-    if (shouldGeneratePost && user) {
+    if (shouldGenerate && input && user) {
       generatePost()
-      setShouldGeneratePost(false)
+      setShouldGenerate(false)
     }
-  }, [shouldGeneratePost, user, generatePost])
+  }, [shouldGenerate, input, user, generatePost])
 
   const handleImageUpload = useCallback((file: File | null) => {
     setImage(file)
@@ -118,7 +127,12 @@ export function PostGenerator() {
             Share your achievement, experience, or story and we&apos;ll transform it into an engaging LinkedIn post
           </p>
         </div>
-        <Select value={postType} onValueChange={setPostType}>
+        <Select 
+          defaultValue={postType}
+          onValueChange={(value) => {
+            setTimeout(() => setPostType(value), 0)
+          }}
+        >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select post type" />
           </SelectTrigger>
