@@ -1,34 +1,33 @@
 'use client'
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
-import { toast } from "sonner"
+} from "@/components/ui/select";
+import { Loader2, Copy, CheckCircle, AlertCircle, Linkedin } from 'lucide-react';
+import { toast } from "sonner";
 
 export function PostGenerator() {
-  const [input, setInput] = useState("")
-  const [postType, setPostType] = useState("achievement")
-  const [generatedPost, setGeneratedPost] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [input, setInput] = useState("");
+  const [postType, setPostType] = useState("achievement");
+  const [generatedPost, setGeneratedPost] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const generatePost = async () => {
-    if (!input) return
+    if (!input) return;
 
-    setLoading(true)
-    setGeneratedPost("")
-    setError(null)
-    
+    setLoading(true);
+    setGeneratedPost("");
+    setError(null);
+
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -39,41 +38,55 @@ export function PostGenerator() {
           content: input,
           type: postType,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`)
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
-      
+
       if (!data.post) {
-        throw new Error("No post content received from the server")
+        throw new Error("No post content received from the server");
       }
 
-      setGeneratedPost(data.post)
-      toast.success("Post generated successfully!")
+      setGeneratedPost(data.post);
+      toast.success("Post generated successfully!");
     } catch (err) {
-      console.error("Error generating post:", err)
-      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred"
-      setError(errorMessage)
-      toast.error(errorMessage)
+      console.error("Error generating post:", err);
+      const errorMessage = err instanceof Error ? err.message : "An unexpected error occurred";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const copyToClipboard = async () => {
+  const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(generatedPost)
-      setCopied(true)
-      toast.success("Copied to clipboard!")
-      setTimeout(() => setCopied(false), 2000)
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast.success("Copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("Failed to copy to clipboard:", err)
-      toast.error("Failed to copy to clipboard")
+      console.error("Failed to copy to clipboard:", err);
+      toast.error("Failed to copy to clipboard");
     }
-  }
+  };
+
+  const shareOnLinkedIn = async () => {
+    if (!generatedPost) return;
+
+    try {
+      await copyToClipboard(generatedPost);
+      const encodedPost = encodeURIComponent(generatedPost);
+      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=&text=${encodedPost}`;
+      window.open(linkedInUrl, '_blank');
+    } catch (err) {
+      console.error("Failed to share on LinkedIn:", err);
+      toast.error("Failed to share on LinkedIn");
+    }
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -103,8 +116,8 @@ export function PostGenerator() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
-        <Button 
-          onClick={generatePost} 
+        <Button
+          onClick={generatePost}
           className="w-full"
           disabled={loading || !input}
           size="lg"
@@ -129,18 +142,28 @@ export function PostGenerator() {
             </p>
           </div>
           {generatedPost && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={copyToClipboard}
-              className="h-8 w-8"
-            >
-              {copied ? (
-                <CheckCircle className="w-4 h-4 text-green-500" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </Button>
+            <div className="flex">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => copyToClipboard(generatedPost)}
+                className="h-8 w-8"
+              >
+                {copied ? (
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={shareOnLinkedIn}
+                className="h-8 w-8 ml-2"
+              >
+                <Linkedin className="w-4 h-4" />
+              </Button>
+            </div>
           )}
         </div>
         <div className="min-h-[200px] p-4 bg-gray-50 rounded-lg relative">
@@ -165,5 +188,5 @@ export function PostGenerator() {
         </div>
       </Card>
     </div>
-  )
+  );
 }
