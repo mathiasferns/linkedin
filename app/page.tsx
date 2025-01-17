@@ -5,7 +5,7 @@ import { Toaster } from "sonner"
 export default function Page() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <Toaster position="top-center" />
+      {/* <Toaster position="top-center" /> */}
       <Header />
       <main className="container mx-auto px-4 py-12 bg-white">
         <div className="text-center max-w-3xl mx-auto space-y-6 mb-12 p-8 rounded-xl backdrop-blur-md bg-white/30 shadow-lg border border-white/20">
