@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { PostGenerator } from "@/components/post-generator"
 import { Header } from "@/components/header"
-import { Toaster } from "sonner"
 import { auth } from '@/lib/firebase'
 import { User } from 'firebase/auth'
 import { Button } from '@/components/ui/button'
@@ -28,7 +27,6 @@ export default function Page() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-gray-50">
-      {/* <Toaster position="top-center" /> */}
       <Header />
       <main className="flex-1 w-full">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-12">
