@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Copy, CheckCircle, AlertCircle, Linkedin } from 'lucide-react'
+import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from "sonner"
 import { useAuth } from "@/context/auth-context"
 import { ImageUpload } from "@/components/image-upload"
@@ -117,20 +117,6 @@ export function PostGenerator() {
       console.log("Error copying to clipboard:", error)
     }
   }, [generatedPost])
-
-  const shareOnLinkedIn = async () => {
-    if (!generatedPost) return;
-
-    try {
-      await copyToClipboard(generatedPost);
-      const encodedPost = encodeURIComponent(generatedPost);
-      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=&text=${encodedPost}`;
-      window.open(linkedInUrl, '_blank');
-    } catch (err) {
-      console.error("Failed to share on LinkedIn:", err);
-      toast.error("Failed to share on LinkedIn");
-    }
-  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
