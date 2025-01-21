@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
+import { Loader2, Copy, CheckCircle, AlertCircle, Linkedin } from 'lucide-react'
 import { toast } from "sonner"
 import { useAuth } from "@/context/auth-context"
 import { ImageUpload } from "@/components/image-upload"
@@ -28,6 +28,8 @@ export function PostGenerator() {
   const [shouldGenerate, setShouldGenerate] = useState(false)
   const { user } = useAuth()
   const router = useRouter()
+  const [linkedInWindow, setLinkedInWindow] = useState<Window | null>(null);
+
 
   // Handle authentication check
   const handleAuthentication = useCallback(() => {
@@ -67,7 +69,7 @@ export function PostGenerator() {
       }
 
       if (!data.post) {
-        throw new Error("No content generated from Gemini API")
+        throw new Error("No content generated")
       }
 
       setGeneratedPost(data.post)
@@ -113,10 +115,32 @@ export function PostGenerator() {
       toast.success("Copied to clipboard!")
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      toast.error("Failed to copy to clipboard")
-      console.log("Error copying to clipboard:", error)
+      toast.error("Failed to copy to clipboard");
+      console.log("Error copying to clipboard:", error);
     }
   }, [generatedPost])
+
+
+  const shareOnLinkedIn = async () => {
+    if (!generatedPost) return;
+  
+    try {
+      await copyToClipboard();
+      const encodedPost = encodeURIComponent(generatedPost);
+      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=&text=${encodedPost}`;
+      
+      if (linkedInWindow && !linkedInWindow.closed) {
+        linkedInWindow.location.href = linkedInUrl;
+        linkedInWindow.focus();
+      } else {
+        const newWindow = window.open(linkedInUrl, 'linkedin_share');
+        setLinkedInWindow(newWindow);
+      }
+    } catch (err) {
+      console.error("Failed to share on LinkedIn:", err);
+      toast.error("Failed to share on LinkedIn");
+    }
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -183,6 +207,7 @@ export function PostGenerator() {
             </p>
           </div>
           {generatedPost && (
+            <div>
             <Button
               variant="outline"
               size="icon"
@@ -195,6 +220,15 @@ export function PostGenerator() {
                 <Copy className="w-4 h-4" />
               )}
             </Button>
+            <Button
+                variant="outline"
+                size="icon"
+                onClick={shareOnLinkedIn}
+                className="h-8 w-8 ml-2"
+              >
+                <Linkedin className="w-4 h-4" />
+              </Button>
+              </div>
           )}
         </div>
         <div className="min-h-[200px] p-4 bg-gray-50 rounded-lg relative">

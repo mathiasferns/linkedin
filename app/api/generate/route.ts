@@ -13,7 +13,7 @@ let currentKeyIndex = 0;
 export async function POST(req: Request) {
   try {
     if (!apikeys[0] || !apikeys[1]) {
-      throw new Error("Both KEY_1 and KEY_2 must be set in environment variables");
+      console.error("Both KEY_1 and KEY_2 must be set in environment variables");
   }
 
   const apiKeyToUse = apikeys[currentKeyIndex];
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     const generatedPost = result.response.text();
 
     if (!generatedPost) {
-      throw new Error("No content generated from Gemini API");
+      throw new Error("No content has been generated");
     }
 
     return NextResponse.json({ post: generatedPost });
@@ -90,9 +90,7 @@ export async function POST(req: Request) {
     console.error("Error in generate route:", error);
     return NextResponse.json(
       {
-        error: `Error: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        error: `Error: Unable to connect (Your internet's probably not working), Go touch some grass`,
       },
       { status: 500 }
     );
