@@ -1,63 +1,116 @@
-'use client'
+"use client";
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { 
+import { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import {
   User,
-  signInWithEmailAndPassword, 
+  signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut
-} from 'firebase/auth'
-import { auth } from '@/lib/firebase'
+} from 'firebase/auth';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface AuthContextType {
-  user: User | null
-  loading: boolean
-  signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string) => Promise<void>
-  signInWithGoogle: () => Promise<void>
-  signOut: () => Promise<void>
+  user: User | null;
+  loading: boolean;
+  userProfile: any;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+  checkUserProfile: (currentUser?: User | null) => Promise<boolean>;
 }
 
-const AuthContext = createContext<AuthContextType>({} as AuthContextType)
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const router = useRouter();
+
+  // Memoized authentication functions
+  const signIn = useCallback(async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string) => {
+    await createUserWithEmailAndPassword(auth, email, password);
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await firebaseSignOut(auth);
+  }, []);
+
+  const checkUserProfile = useCallback(async (currentUser?: User | null) => {
+    if (!currentUser) {
+      console.log("checkUserProfile: No user logged in (argument), returning false");
+      return false;
+    }
+
+    try {
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      if (userDoc.exists()) {
+        setUserProfile(userDoc.data());
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error checking user profile:', error);
+      return false;
+    }
+  }, []);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user)
-      setLoading(false)
-    })
+    const unsubscribe = auth.onAuthStateChanged(async (authUser) => {
+      setUser(authUser);
+      setLoading(false);
 
-    return () => unsubscribe()
-  }, [])
+      if (authUser) {
+        try {
+          const hasProfile = await checkUserProfile(authUser);
+          if (hasProfile) {
+            router.push('/dashboard');
+          } else {
+            router.push('/onboarding');
+          }
+          toast.success('Signed in successfully!');
+        } catch (error) {
+          console.error('Error during post-auth profile check:', error);
+          toast.error('Something went wrong after sign-in. Please try again.');
+        }
+      }
+    });
 
-  const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password)
-  }
+    return () => unsubscribe();
+  }, [checkUserProfile, router]);
 
-  const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password)
-  }
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
-  }
-
-  const signOut = async () => {
-    await firebaseSignOut(auth)
-  }
+  // Memoized context value
+  const authValue = useMemo(() => ({
+    user,
+    loading,
+    userProfile,
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signOut,
+    checkUserProfile
+  }), [user, loading, userProfile, signIn, signUp, signInWithGoogle, signOut, checkUserProfile]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={authValue}>
       {!loading && children}
     </AuthContext.Provider>
-  )
+  );
 }
 
-export const useAuth = () => useContext(AuthContext)
-
+export const useAuth = () => useContext(AuthContext);

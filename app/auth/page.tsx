@@ -1,7 +1,7 @@
-'use client'
+// auth/page.tsx
+'use client';
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,8 +12,7 @@ export default function AuthPage() {
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const { signIn, signUp, signInWithGoogle } = useAuth()
-  const router = useRouter()
+  const { signIn, signUp, signInWithGoogle } = useAuth() 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,8 +22,6 @@ export default function AuthPage() {
       } else {
         await signIn(email, password)
       }
-      router.push('/')
-      toast.success(isSignUp ? 'Account created successfully!' : 'Signed in successfully!')
     } catch {
       toast.error('Authentication failed. Please try again.')
     }
@@ -33,21 +30,20 @@ export default function AuthPage() {
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle()
-      router.push('/')
-      toast.success('Signed in successfully!')
     } catch {
       toast.error('Google sign-in failed. Please try again.')
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    // ... your AuthPage JSX (form, buttons, etc.) ...
+     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>{isSignUp ? 'Create an Account' : 'Sign In'}</CardTitle>
           <CardDescription>
-            {isSignUp 
-              ? 'Create a new account to generate LinkedIn posts' 
+            {isSignUp
+              ? 'Create a new account to generate LinkedIn posts'
               : 'Sign in to your account to generate LinkedIn posts'}
           </CardDescription>
         </CardHeader>
@@ -100,8 +96,8 @@ export default function AuthPage() {
             className="w-full"
             onClick={() => setIsSignUp(!isSignUp)}
           >
-            {isSignUp 
-              ? 'Already have an account? Sign in' 
+            {isSignUp
+              ? 'Already have an account? Sign in'
               : "Don't have an account? Sign up"}
           </Button>
         </CardFooter>

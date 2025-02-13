@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -12,10 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Copy, CheckCircle, AlertCircle } from 'lucide-react'
+import { Loader2, Copy, CheckCircle, AlertCircle, Linkedin } from 'lucide-react'
 import { toast } from "sonner"
 import { useAuth } from "@/context/auth-context"
 import { ImageUpload } from "@/components/image-upload"
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export function PostGenerator() {
   const [input, setInput] = useState("")
@@ -26,7 +28,9 @@ export function PostGenerator() {
   const [error, setError] = useState<string | null>(null)
   const [image, setImage] = useState<File | null>(null)
   const [shouldGenerate, setShouldGenerate] = useState(false)
-  const { user } = useAuth()
+  const [linkedInWindow, setLinkedInWindow] = useState<Window | null>(null)
+
+  const { user, userProfile } = useAuth()
   const router = useRouter()
 
   // Handle authentication check
@@ -39,9 +43,46 @@ export function PostGenerator() {
     return true
   }, [user, router, input])
 
+  // Add new checks before generating post
+  const checkSubscriptionStatus = async () => {
+    if (!user) return false;
+
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const userData = userDoc.data();
+
+    if (!userData) return false;
+
+    if (userData.subscriptionStatus === 'active') {
+      return true;
+    }
+
+    if (userData.subscriptionStatus === 'trial') {
+      if (userData.postCount < 3) {
+        await updateDoc(doc(db, 'users', user.uid), {
+          postCount: userData.postCount + 1,
+          subscriptionStatus: userData.postCount === 2 ? 'inactive' : 'trial'
+        });
+        return true;
+      } else {
+        toast.error("Trial limit reached. Please upgrade your subscription.");
+        return false;
+      }
+    }
+
+    if (userData.subscriptionStatus === 'inactive') {
+      toast.success("Trial limit reached. Upgrade your subscription to continue generating posts.");
+      return false;
+    }
+
+    return false;
+  };
+
   // Main post generation logic
   const generatePost = useCallback(async () => {
-    if (!input || !handleAuthentication()) return
+    if (!input || !handleAuthentication()) return;
+
+    const canGenerate = await checkSubscriptionStatus();
+    if (!canGenerate) return;
 
     setLoading(true)
     setGeneratedPost("")
@@ -51,6 +92,7 @@ export function PostGenerator() {
       const formData = new FormData()
       formData.append('content', input)
       formData.append('type', postType)
+      formData.append('userDetails', JSON.stringify(userProfile));
       if (image) {
         formData.append('image', image)
       }
@@ -63,11 +105,11 @@ export function PostGenerator() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP error! status: ${response.status}`)
+        console.error(data.error || `HTTP error! status: ${response.status}`)
       }
 
       if (!data.post) {
-        throw new Error("No content generated from Gemini API")
+        toast.error("No content generated, server might be down")
       }
 
       setGeneratedPost(data.post)
@@ -76,11 +118,10 @@ export function PostGenerator() {
       console.error("Error generating post:", error)
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
       setError(errorMessage)
-      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
-  }, [input, postType, image, handleAuthentication])
+  }, [input, postType, image, handleAuthentication, userProfile])
 
   // Effect to load saved input
   useEffect(() => {
@@ -113,10 +154,29 @@ export function PostGenerator() {
       toast.success("Copied to clipboard!")
       setTimeout(() => setCopied(false), 2000)
     } catch (error) {
-      toast.error("Failed to copy to clipboard")
       console.log("Error copying to clipboard:", error)
     }
   }, [generatedPost])
+
+  const shareOnLinkedIn = async () => {
+    if (!generatedPost) return;
+  
+    try {
+      await copyToClipboard();
+      const encodedPost = encodeURIComponent(generatedPost);
+      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=&text=${encodedPost}`;
+      
+      if (linkedInWindow && !linkedInWindow.closed) {
+        linkedInWindow.location.href = linkedInUrl;
+        linkedInWindow.focus();
+      } else {
+        const newWindow = window.open(linkedInUrl, 'linkedin_share');
+        setLinkedInWindow(newWindow);
+      }
+    } catch (err) {
+      console.error("Failed to share on LinkedIn:", err);
+    }
+  };
 
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -139,7 +199,7 @@ export function PostGenerator() {
           <SelectContent>
             <SelectItem value="achievement">🏆 Achievement</SelectItem>
             <SelectItem value="experience">💡 Experience</SelectItem>
-            <SelectItem value="professional">🎯 Professional Advice</SelectItem>
+            <SelectItem value="professional">🎯 Professional</SelectItem>
             <SelectItem value="story">📖 Story</SelectItem>
             <SelectItem value="fun">😄 Fun </SelectItem>
           </SelectContent>
@@ -183,6 +243,7 @@ export function PostGenerator() {
             </p>
           </div>
           {generatedPost && (
+            <div>
             <Button
               variant="outline"
               size="icon"
@@ -195,6 +256,15 @@ export function PostGenerator() {
                 <Copy className="w-4 h-4" />
               )}
             </Button>
+            <Button
+            variant="outline"
+            size="icon"
+            onClick={shareOnLinkedIn}
+            className="h-8 w-8 ml-2"
+          >
+            <Linkedin className="w-4 h-4" />
+          </Button>
+          </div>
           )}
         </div>
         <div className="min-h-[200px] p-4 bg-gray-50 rounded-lg relative">
