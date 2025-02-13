@@ -121,7 +121,7 @@ export function PostGenerator() {
     } finally {
       setLoading(false)
     }
-  }, [input, postType, image, handleAuthentication, userProfile])
+  }, [input, postType, image, handleAuthentication, userProfile, checkSubscriptionStatus])
 
   // Effect to load saved input
   useEffect(() => {

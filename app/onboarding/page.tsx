@@ -93,7 +93,7 @@ export default function OnboardingPage() {
     </div>
   )
 
-  function renderFormField(label: string, fieldName: string, placeholder: string, Component: typeof Input | typeof Textarea, required: boolean, handleChange: any) {
+  function renderFormField(label: string, fieldName: string, placeholder: string, Component: typeof Input | typeof Textarea, required: boolean, handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void) {
     return (
       <div className="space-y-2">
         <label className="text-lg font-medium text-gray-800">{label}</label> {/* Darker gray label */}
