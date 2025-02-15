@@ -23,7 +23,8 @@ export default function AuthPage() {
         await signIn(email, password)
       }
     } catch {
-      toast.error('Authentication failed. Please try again.')
+      toast.error('Authentication failed. Enter valid email address and ensure password has minimum 6 characters')
+      setPassword('');
     }
   }
 
