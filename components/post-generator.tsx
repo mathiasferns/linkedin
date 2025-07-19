@@ -29,6 +29,7 @@ export function PostGenerator() {
   const [image, setImage] = useState<File | null>(null)
   const [shouldGenerate, setShouldGenerate] = useState(false)
   const [linkedInWindow, setLinkedInWindow] = useState<Window | null>(null)
+  const [isStreaming, setIsStreaming] = useState(false)
 
   const { user, userProfile } = useAuth()
   const router = useRouter()
@@ -77,7 +78,7 @@ export function PostGenerator() {
     return false;
   };
 
-  // Main post generation logic
+  // Updated post generation logic with streaming
   const generatePost = useCallback(async () => {
     if (!input || !handleAuthentication()) return;
 
@@ -85,6 +86,7 @@ export function PostGenerator() {
     if (!canGenerate) return;
 
     setLoading(true)
+    setIsStreaming(true)
     setGeneratedPost("")
     setError(null)
 
@@ -102,24 +104,60 @@ export function PostGenerator() {
         body: formData,
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        console.error(data.error || `HTTP error! status: ${response.status}`)
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
-      if (!data.post) {
-        toast.error("No content generated, server might be down")
-      }
+      // Check if response is streaming
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('text/plain')) {
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
 
-      setGeneratedPost(data.post)
-      toast.success("Post generated successfully!")
+        if (!reader) {
+          throw new Error('No readable stream available');
+        }
+
+        let accumulatedText = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          
+          if (done) {
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          accumulatedText += chunk;
+          setGeneratedPost(accumulatedText);
+        }
+
+        if (!accumulatedText) {
+          toast.error("No content generated, server might be down");
+        } else {
+          toast.success("Post generated successfully!");
+        }
+      } else {
+        // Handle non-streaming response (fallback)
+        const data = await response.json();
+        
+        if (!data.post) {
+          toast.error("No content generated, server might be down");
+        } else {
+          setGeneratedPost(data.post);
+          toast.success("Post generated successfully!");
+        }
+      }
     } catch (error) {
       console.error("Error generating post:", error)
       const errorMessage = error instanceof Error ? error.message : "An unexpected error occurred"
       setError(errorMessage)
+      toast.error(errorMessage);
     } finally {
       setLoading(false)
+      setIsStreaming(false)
     }
   }, [input, postType, image, handleAuthentication, userProfile, checkSubscriptionStatus])
 
@@ -226,7 +264,7 @@ export function PostGenerator() {
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Generating your post...
+              {isStreaming ? "Streaming your post..." : "Generating your post..."}
             </>
           ) : (
             "Generate Engaging Post"
@@ -239,10 +277,10 @@ export function PostGenerator() {
           <div className="space-y-1">
             <h2 className="text-xl font-semibold">Generated Post</h2>
             <p className="text-sm text-gray-500">
-              Your LinkedIn Post
+              {isStreaming ? "Streaming in real-time..." : "Your LinkedIn Post"}
             </p>
           </div>
-          {generatedPost && (
+          {generatedPost && !loading && (
             <div>
             <Button
               variant="outline"
@@ -268,7 +306,7 @@ export function PostGenerator() {
           )}
         </div>
         <div className="min-h-[200px] p-4 bg-gray-50 rounded-lg relative">
-          {loading && (
+          {loading && !generatedPost && (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80">
               <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
             </div>
@@ -280,7 +318,12 @@ export function PostGenerator() {
               <p className="text-sm text-gray-500">Please try again or contact me if the issue persists.</p>
             </div>
           ) : generatedPost ? (
-            <div className="whitespace-pre-wrap">{generatedPost}</div>
+            <div className="whitespace-pre-wrap">
+              {generatedPost}
+              {isStreaming && (
+                <span className="animate-pulse">|</span>
+              )}
+            </div>
           ) : (
             <div className="text-gray-400 text-center mt-12 flex flex-col items-center gap-2">
               Your generated post will appear here
@@ -291,4 +334,3 @@ export function PostGenerator() {
     </div>
   )
 }
-
