@@ -35,22 +35,6 @@ export async function POST(req: Request) {
     // Parse the client-provided user details.
     const userProfile = JSON.parse(userDetailsJson);
 
-    // Verify subscription status
-    // const userDoc = await getDoc(doc(db, 'users', userProfile.uid));
-    // const userData = userDoc.data();
-
-    // if (!userData) {
-    //   throw new Error("User data not found");
-    // }
-
-    // if (userData.subscriptionStatus === 'inactive') {
-    //   return NextResponse.json({ error: "Subscription inactive" }, { status: 403 });
-    // }
-
-    // if (userData.subscriptionStatus === 'trial' && userData.postCount >= 3) {
-    //   return NextResponse.json({ error: "Trial limit reached" }, { status: 403 });
-    // }
-
     // Define the prompt styles.
     const prompts: Record<string, string> = {
       achievement:"Transform this achievement into an engaging LinkedIn post that's inspiring yet humble: ",
@@ -67,7 +51,7 @@ export async function POST(req: Request) {
     // Build the text prompt using the user profile data.
     parts.push({
       text: `
-      You are an expert LinkedIn post writer with years of experience crafting posts that are not only engaging but also go viral. Your mastery in understanding LinkedIn’s professional audience and leveraging the platform's dynamics has earned you numerous accolades in the realm of digital content creation.
+      You are an expert LinkedIn post writer with years of experience crafting posts that are not only engaging but also go viral. Your mastery in understanding LinkedIn's professional audience and leveraging the platform's dynamics has earned you numerous accolades in the realm of digital content creation.
 
 Create an engaging and professional LinkedIn post that communicates the intended message effectively, tailored to the audience's preferences and the platform's professional ethos. Use the following structure to guide your writing:
 
@@ -75,7 +59,7 @@ Your posts should:
 
 1. Engage and Hook Readers Immediately: Start with a bold statement or a thought-provoking question related to the topic or trend. Use this format: [emoji] [Hook] [emoji]
 Example: 🌟 Is remote work the future of our industry? 🌟
-2. Be Well-Structured: Use bullet points, numbered lists, or different bullet styles to break content into digestible parts:
+2. Be Well-Structured: Use bullet points, numbered lists, or different bullet styles like ↓, →, ↳ to break content into digestible parts:
 Key Points: For highlighting major ideas ,
 Benefits: To list advantages or positive outcomes,
 Insights: For sharing data or perspectives.
@@ -116,18 +100,40 @@ User's Prompt: ${content}
       });
     }
 
-    // Call the generative AI API with the prompt parts.
-    const result = await model.generateContent({
+    // Call the generative AI API with streaming
+    const result = await model.generateContentStream({
       contents: [{ role: "user", parts }],
     });
 
-    const generatedPost = result.response.text();
+    // Create a readable stream for the response
+    const encoder = new TextEncoder();
+    
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            if (chunkText) {
+              controller.enqueue(encoder.encode(chunkText));
+            }
+          }
+          controller.close();
+        } catch (error) {
+          console.error("Streaming error:", error);
+          controller.error(error);
+        }
+      },
+    });
 
-    if (!generatedPost) {
-      throw new Error("No content generated from Gemini, server might be down");
-    }
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Transfer-Encoding': 'chunked',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
 
-    return NextResponse.json({ post: generatedPost });
   } catch (error) {
     console.error("Error in generate route:", error);
     return NextResponse.json(
@@ -140,4 +146,3 @@ User's Prompt: ${content}
     );
   }
 }
-
